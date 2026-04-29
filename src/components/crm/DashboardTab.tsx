@@ -49,7 +49,9 @@ import {
   MoreVertical,
   Eye,
   ChevronDown,
+  AlertCircle,
 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { Creditor } from "@/types/creditor";
 import { DEBT_TYPES } from "@/types/creditor";
 import DocumentManager from "./DocumentManager";
