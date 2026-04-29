@@ -896,6 +896,7 @@ const DashboardTab = ({
               <TableRow className="hover:bg-transparent">
                 <TableHead className="w-10 px-3 bg-muted/30" />
                 <TableHead className="text-xs font-semibold bg-muted/30">Lender Name</TableHead>
+                <TableHead className="text-xs font-semibold bg-muted/30">Category</TableHead>
                 <TableHead className="text-xs font-semibold bg-muted/30">Tenure (mo)</TableHead>
                 <TableHead className="text-xs font-semibold bg-muted/30">Interest Rate</TableHead>
                 <TableHead className="text-xs font-semibold bg-muted/30 text-right">EMI</TableHead>
