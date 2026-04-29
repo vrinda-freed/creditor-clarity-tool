@@ -1096,6 +1096,9 @@ const DashboardTab = ({
                     </div>
                   </TableCell>
                   <TableCell className="py-2.5">
+                    <span className="text-[11px] text-muted-foreground">CAT B</span>
+                  </TableCell>
+                  <TableCell className="py-2.5">
                     <Input type="number" value={newLenderDraft.tenureMonths}
                       onChange={(e) => setNewLenderDraft(p => ({ ...p, tenureMonths: Number(e.target.value) }))}
                       className="h-7 text-xs w-20 border-primary/40" />
