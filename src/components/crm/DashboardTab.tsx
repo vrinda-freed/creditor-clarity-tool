@@ -83,6 +83,9 @@ const calcPMT = (principal: number, annualRate: number, months: number): number 
 const foirColor = (pct: number) =>
   pct <= 40 ? "text-green-600" : pct <= 55 ? "text-amber-600" : "text-red-600";
 /* ── Lender data ── */
+type LenderCategory = "CAT A" | "CAT B" | "CAT C" | "CAT D" | "NA";
+const LENDER_CATEGORIES: LenderCategory[] = ["CAT A", "CAT B", "CAT C", "CAT D", "NA"];
+
 interface LenderOption {
   id: string;
   name: string;
@@ -90,14 +93,23 @@ interface LenderOption {
   roi: number;
   topUpAvailable: number;
   overrideEMI?: number;
+  category: LenderCategory;
+  policyMatch: boolean;
 }
 
 const INITIAL_LENDERS: LenderOption[] = [
-  { id: "1", name: "AFL",             tenureMonths: 60, roi: 12.5, topUpAvailable: 200000 },
-  { id: "2", name: "TATA Capital",    tenureMonths: 60, roi: 14.0, topUpAvailable: 0 },
-  { id: "3", name: "IDFC First",      tenureMonths: 60, roi: 13.0, topUpAvailable: 250000 },
-  { id: "4", name: "Bajaj Finserv",   tenureMonths: 72, roi: 14.5, topUpAvailable: 400000 },
-  { id: "5", name: "Piramal Finance", tenureMonths: 60, roi: 15.5, topUpAvailable: 0 },
+  // Matching the file (4)
+  { id: "1", name: "AFL",             tenureMonths: 60, roi: 12.5, topUpAvailable: 200000, category: "CAT A", policyMatch: true },
+  { id: "3", name: "IDFC First",      tenureMonths: 60, roi: 13.0, topUpAvailable: 250000, category: "CAT A", policyMatch: true },
+  { id: "4", name: "Bajaj Finserv",   tenureMonths: 72, roi: 14.5, topUpAvailable: 400000, category: "CAT B", policyMatch: true },
+  { id: "6", name: "HDFC Bank",       tenureMonths: 60, roi: 13.5, topUpAvailable: 300000, category: "CAT A", policyMatch: true },
+  // Not matching (6) — mix of NA category & policy-not-match
+  { id: "2", name: "TATA Capital",    tenureMonths: 60, roi: 14.0, topUpAvailable: 0,      category: "NA",    policyMatch: false },
+  { id: "5", name: "Piramal Finance", tenureMonths: 60, roi: 15.5, topUpAvailable: 0,      category: "CAT C", policyMatch: false },
+  { id: "7", name: "ICICI Bank",      tenureMonths: 60, roi: 13.0, topUpAvailable: 0,      category: "NA",    policyMatch: false },
+  { id: "8", name: "Kotak Mahindra",  tenureMonths: 60, roi: 14.0, topUpAvailable: 150000, category: "CAT D", policyMatch: false },
+  { id: "9", name: "Axis Finance",    tenureMonths: 60, roi: 13.5, topUpAvailable: 0,      category: "NA",    policyMatch: false },
+  { id: "10", name: "Shriram Finance",tenureMonths: 72, roi: 15.0, topUpAvailable: 100000, category: "CAT C", policyMatch: false },
 ];
 
 /* ── Lender suggestions ── */
