@@ -205,6 +205,8 @@ const DashboardTab = ({
       tenureMonths: newLenderDraft.tenureMonths,
       roi: newLenderDraft.roi,
       topUpAvailable: newLenderDraft.topUpAvailable,
+      category: "CAT B",
+      policyMatch: true,
     };
     setLenderData((p) => [...p, nl]);
     setNewLenderDraft({ name: "", tenureMonths: 60, roi: 12.0, topUpAvailable: 0 });
