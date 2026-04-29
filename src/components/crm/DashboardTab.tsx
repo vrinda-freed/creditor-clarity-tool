@@ -937,20 +937,48 @@ const DashboardTab = ({
                           className="h-7 text-xs w-32 border-primary/40"
                           onClick={(e) => e.stopPropagation()} />
                       ) : (
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="text-sm font-semibold text-foreground">{l.name}</span>
-                          {l.id === "1" && (
-                            <span className="text-[9px] font-bold text-violet-700 bg-violet-100 border border-violet-300 rounded-full px-1.5 py-0.5">
-                              User Preferred
-                            </span>
-                          )}
-                          {l.id === bestLenderId && (
-                            <span className="text-[9px] font-bold text-green-700 bg-green-100 border border-green-300 rounded-full px-1.5 py-0.5 flex items-center gap-0.5">
-                              <Sparkles className="h-2.5 w-2.5" /> Best
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="text-sm font-semibold text-foreground">{l.name}</span>
+                            {l.id === "1" && (
+                              <span className="text-[9px] font-bold text-violet-700 bg-violet-100 border border-violet-300 rounded-full px-1.5 py-0.5">
+                                User Preferred
+                              </span>
+                            )}
+                            {l.id === bestLenderId && (
+                              <span className="text-[9px] font-bold text-green-700 bg-green-100 border border-green-300 rounded-full px-1.5 py-0.5 flex items-center gap-0.5">
+                                <Sparkles className="h-2.5 w-2.5" /> Best
+                              </span>
+                            )}
+                          </div>
+                          {!l.policyMatch && (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-medium text-red-600 leading-tight">
+                              <AlertCircle className="h-3 w-3 shrink-0" /> Lender policy not match
                             </span>
                           )}
                         </div>
                       )}
+                    </TableCell>
+                    <TableCell className="py-3" onClick={(e) => e.stopPropagation()}>
+                      <Select
+                        value={l.category}
+                        onValueChange={(v) => updateLender(l.id, "category", v as LenderCategory)}
+                      >
+                        <SelectTrigger
+                          className={`h-7 w-[88px] text-[11px] font-semibold border ${
+                            l.category === "NA"
+                              ? "bg-red-50 border-red-200 text-red-700 hover:bg-red-100"
+                              : "bg-muted/40 border-transparent text-foreground hover:bg-muted"
+                          }`}
+                        >
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {LENDER_CATEGORIES.map((c) => (
+                            <SelectItem key={c} value={c} className="text-xs">{c}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </TableCell>
                     <TableCell className="py-3">
                       {isLenderEditing ? (
