@@ -563,6 +563,9 @@ const DashboardTab = ({
                 <Pencil className="h-3.5 w-3.5" /> Edit
               </Button>
             )}
+            <Button size="sm" onClick={handleLoanDetails} className="gap-1.5 text-xs h-8">
+              Lender Check <ArrowRight className="h-3.5 w-3.5" />
+            </Button>
           </div>
         </div>
 
