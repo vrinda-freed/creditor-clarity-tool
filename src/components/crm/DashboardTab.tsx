@@ -981,10 +981,12 @@ const DashboardTab = ({
                 <TableHead className="text-xs font-semibold bg-muted/30 text-right">Total Repayment</TableHead>
                 <TableHead className="text-xs font-semibold bg-muted/30 text-center">Top-up</TableHead>
                 <TableHead className="text-xs font-semibold bg-muted/30 text-center">Add Top-up</TableHead>
+                <TableHead className="text-xs font-semibold bg-muted/30">Approved for Login</TableHead>
+                <TableHead className="text-xs font-semibold bg-muted/30 min-w-[180px]">Remarks</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {lenderRows.map((l) => {
+              {sortedLenderRows.map((l) => {
                 const isSelected  = selectedLenderId === l.id;
                 const isAutoSel   = isSelected && autoSelected;
                 const hasTopUp    = l.topUpAvailable > 0;
