@@ -812,12 +812,6 @@ const DashboardTab = ({
 
       {/* ═══════════════ SECTION 2B · SUMMARY ═══════════════ */}
       <div className="bg-card rounded-lg border p-5 space-y-4">
-        <div className="flex items-center justify-center">
-          <Button onClick={handleLoanDetails} className="gap-2 px-10 h-10 text-sm">
-            Lender Check <ArrowRight className="h-4 w-4" />
-          </Button>
-        </div>
-
         <h3 className="text-sm font-semibold text-foreground">Summary</h3>
 
         <div className="grid grid-cols-2 gap-4">
