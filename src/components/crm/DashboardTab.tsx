@@ -1032,7 +1032,7 @@ const DashboardTab = ({
                           </div>
                           {!l.policyMatch && (
                             <span className="inline-flex items-center gap-1 text-[10px] font-medium text-red-600 leading-tight">
-                              <AlertCircle className="h-3 w-3 shrink-0" /> Lender policy not match
+                              <AlertCircle className="h-3 w-3 shrink-0" /> Policy Mismatch
                             </span>
                           )}
                         </div>
