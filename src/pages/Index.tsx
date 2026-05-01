@@ -149,10 +149,10 @@ const Index = () => {
   const tabsRef                                   = useRef<HTMLDivElement>(null);
 
   // ── Sales Rep Action state ─────────────────────────────────────────────────
-  const [repActionStatus, setRepActionStatus] = useState<null | "rejected" | "scrub">(null);
+  const [repActionStatus, setRepActionStatus] = useState<null | "rejected" | "scrub" | "request-login">(null);
   const [repActionReason, setRepActionReason] = useState("");
 
-  const handleRepActionSubmit = (action: "rejected" | "scrub", reason?: string) => {
+  const handleRepActionSubmit = (action: "rejected" | "scrub" | "request-login", reason?: string) => {
     setRepActionStatus(action);
     if (reason) setRepActionReason(reason);
   };
@@ -168,6 +168,8 @@ const Index = () => {
       ? "File Rejected"
       : repActionStatus === "scrub"
       ? "Scrub Requested"
+      : repActionStatus === "request-login"
+      ? "Login Requested"
       : latestScrub
       ? SCRUB_STATUS_CONFIG[latestScrub.status].clientStage
       : sentDocumentRequests.length > 0
