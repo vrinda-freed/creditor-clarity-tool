@@ -199,8 +199,30 @@ const DashboardTab = ({
 
   /* ── Lender data ── */
   const [lenderData, setLenderData] = useState<LenderOption[]>(INITIAL_LENDERS);
-  const updateLender = (id: string, field: keyof LenderOption, val: number | string) =>
-    setLenderData((p) => p.map((l) => (l.id === id ? { ...l, [field]: val } : l)));
+  /* Whether the user has run the "Lender Check" — controls sort order & UI cues */
+  const [lenderMatchRun, setLenderMatchRun] = useState(false);
+
+  const updateLender = (id: string, field: keyof LenderOption, val: number | string | boolean | null) =>
+    setLenderData((prev) =>
+      prev.map((l) => {
+        if (l.id !== id) return l;
+        const next: LenderOption = { ...l, [field]: val } as LenderOption;
+        // Category change → recompute commercials & policy match
+        if (field === "category") {
+          const cat = val as LenderCategory;
+          if (cat === "NA") {
+            next.policyMatch = false;
+          } else {
+            const c = CATEGORY_COMMERCIALS[cat];
+            next.roi = c.roi;
+            next.tenureMonths = c.tenureMonths;
+            // Re-evaluate policy match: cat A/B always match, C/D match only if has top-up or low ROI
+            next.policyMatch = cat === "CAT A" || cat === "CAT B";
+          }
+        }
+        return next;
+      })
+    );
 
   /* ── Qualification form (pre-filled) ── */
   const [qualForm, setQualForm] = useState({
