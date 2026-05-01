@@ -24,6 +24,7 @@ import {
   ShieldCheck,
   X,
   Check,
+  LogIn,
 } from "lucide-react";
 import { ScrubTask } from "@/types/scrub";
 
@@ -40,9 +41,11 @@ interface RightPanelProps {
   onRequestScrub: (primaryLender: string, secondaryLender?: string) => void;
   onScrubFileClick: (task: ScrubTask) => void;
   // Sales Rep Actions
-  onRepActionSubmit: (action: "rejected" | "scrub", reason?: string) => void;
+  onRepActionSubmit: (action: "rejected" | "scrub" | "request-login", reason?: string) => void;
   // Lender names for scrub selection
   availableLenders?: string[];
+  // Whether the file is ready for direct submission (enables Request Login)
+  fileReadyForLogin?: boolean;
 }
 
 interface ActionRowProps {
@@ -89,12 +92,13 @@ const RightPanel = ({
   onScrubFileClick,
   onRepActionSubmit,
   availableLenders,
+  fileReadyForLogin = false,
 }: RightPanelProps) => {
   const [noteText, setNoteText] = useState("");
   const [requestInfoOpen, setRequestInfoOpen] = useState(false);
 
   // Sales Rep Actions state
-  const [repAction, setRepAction] = useState<null | "rejected" | "scrub">(null);
+  const [repAction, setRepAction] = useState<null | "rejected" | "scrub" | "request-login">(null);
   const [rejectReason, setRejectReason] = useState("");
   const [repComment, setRepComment] = useState("");
   const [repSubmitted, setRepSubmitted] = useState(false);
@@ -102,7 +106,8 @@ const RightPanel = ({
   // Lender selection for scrub
   const lenderList = availableLenders && availableLenders.length > 0 ? availableLenders : SCRUB_LENDER_LIST;
   const [scrubPrimaryLender, setScrubPrimaryLender] = useState("");
-  const [scrubSecondaryLender, setScrubSecondaryLender] = useState("");
+  const [scrubSecondaryLenders, setScrubSecondaryLenders] = useState<string[]>([]);
+  const [secondaryOpen, setSecondaryOpen] = useState(false);
 
   const notes = [
     "Call Nature : Manual-Outbound| Call start time: 2025-03-10 10:30",
