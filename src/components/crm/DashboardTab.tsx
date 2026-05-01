@@ -158,6 +158,7 @@ interface DashboardTabProps {
   setExcluded: Dispatch<SetStateAction<Creditor[]>>;
   stcIds:      Set<string>;
   onToggleStc: (id: string) => void;
+  onFileReadyChange?: (ready: boolean) => void;
 }
 
 /* ── Editable number cell ── */
@@ -183,6 +184,7 @@ const DashboardTab = ({
   included, setIncluded,
   excluded, setExcluded,
   stcIds, onToggleStc,
+  onFileReadyChange,
 }: DashboardTabProps) => {
 
   /* ── Scroll ref ── */
@@ -226,6 +228,9 @@ const DashboardTab = ({
       topUpAvailable: newLenderDraft.topUpAvailable,
       category: "CAT B",
       policyMatch: true,
+      approvedForLogin: null,
+      remark: "",
+      rejectionReason: "",
     };
     setLenderData((p) => [...p, nl]);
     setNewLenderDraft({ name: "", tenureMonths: 60, roi: 12.0, topUpAvailable: 0 });
