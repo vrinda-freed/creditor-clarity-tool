@@ -1137,6 +1137,74 @@ const DashboardTab = ({
                         </TooltipContent>
                       </Tooltip>
                     </TableCell>
+
+                    {/* Approved for Login */}
+                    <TableCell className="py-3" onClick={(e) => e.stopPropagation()}>
+                      {l.policyMatch || REMARK_MANDATORY_LENDERS.has(l.name) ? (
+                        <Select
+                          value={l.approvedForLogin ?? ""}
+                          onValueChange={(v) => updateLender(l.id, "approvedForLogin", v as ApprovedForLogin)}
+                        >
+                          <SelectTrigger
+                            className={`h-7 w-[88px] text-[11px] font-semibold ${
+                              l.approvedForLogin === "yes"
+                                ? "bg-emerald-50 border-emerald-200 text-emerald-700"
+                                : l.approvedForLogin === "no"
+                                  ? "bg-red-50 border-red-200 text-red-700"
+                                  : "bg-muted/40 border-transparent"
+                            }`}
+                          >
+                            <SelectValue placeholder="—" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="yes" className="text-xs">Yes</SelectItem>
+                            <SelectItem value="no" className="text-xs">No</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <span className="text-[11px] text-muted-foreground italic">N/A</span>
+                      )}
+                    </TableCell>
+
+                    {/* Remarks */}
+                    <TableCell className="py-3" onClick={(e) => e.stopPropagation()}>
+                      {(() => {
+                        const isMandatoryLender = REMARK_MANDATORY_LENDERS.has(l.name);
+                        const remarkRequired =
+                          (l.approvedForLogin === "yes") || isMandatoryLender;
+                        if (l.approvedForLogin === "no") {
+                          // Free-text input that becomes a custom rejection-reason chip
+                          return (
+                            <div className="space-y-1">
+                              <Input
+                                value={l.rejectionReason}
+                                onChange={(e) => updateLender(l.id, "rejectionReason", e.target.value)}
+                                placeholder="Type rejection reason..."
+                                className="h-7 text-xs border-red-200 focus-visible:ring-red-300"
+                              />
+                              {l.rejectionReason && (
+                                <Badge variant="outline" className="text-[10px] h-4 px-1.5 border-red-300 text-red-700 bg-red-50">
+                                  Reason: {l.rejectionReason}
+                                </Badge>
+                              )}
+                            </div>
+                          );
+                        }
+                        return (
+                          <div className="space-y-1">
+                            <Input
+                              value={l.remark}
+                              onChange={(e) => updateLender(l.id, "remark", e.target.value)}
+                              placeholder={remarkRequired ? "Remark (required)" : "Optional remark"}
+                              className={`h-7 text-xs ${remarkRequired && !l.remark.trim() ? "border-red-300 focus-visible:ring-red-300" : ""}`}
+                            />
+                            {remarkRequired && !l.remark.trim() && (
+                              <span className="text-[9px] text-red-600 font-medium">Required{isMandatoryLender ? ` for ${l.name}` : ""}</span>
+                            )}
+                          </div>
+                        );
+                      })()}
+                    </TableCell>
                   </TableRow>
                 );
               })}
