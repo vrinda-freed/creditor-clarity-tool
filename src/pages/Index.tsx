@@ -151,6 +151,7 @@ const Index = () => {
   // ── Sales Rep Action state ─────────────────────────────────────────────────
   const [repActionStatus, setRepActionStatus] = useState<null | "rejected" | "scrub" | "request-login">(null);
   const [repActionReason, setRepActionReason] = useState("");
+  const [fileReadyForLogin, setFileReadyForLogin] = useState(false);
 
   const handleRepActionSubmit = (action: "rejected" | "scrub" | "request-login", reason?: string) => {
     setRepActionStatus(action);
@@ -391,6 +392,7 @@ const Index = () => {
                     setExcluded={setExcluded}
                     stcIds={stcIds}
                     onToggleStc={handleToggleStc}
+                    onFileReadyChange={setFileReadyForLogin}
                   />
                 </TabsContent>
 
@@ -457,6 +459,7 @@ const Index = () => {
               onRequestScrub={handleRequestScrub}
               onScrubFileClick={handleScrubFileClick}
               onRepActionSubmit={handleRepActionSubmit}
+              fileReadyForLogin={fileReadyForLogin}
             />
           </div>
         )}
