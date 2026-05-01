@@ -88,6 +88,17 @@ const foirColor = (pct: number) =>
 type LenderCategory = "CAT A" | "CAT B" | "CAT C" | "CAT D" | "NA";
 const LENDER_CATEGORIES: LenderCategory[] = ["CAT A", "CAT B", "CAT C", "CAT D", "NA"];
 
+/* ── Category-driven commercials (ROI & default tenure) ── */
+const CATEGORY_COMMERCIALS: Record<LenderCategory, { roi: number; tenureMonths: number }> = {
+  "CAT A": { roi: 12.5, tenureMonths: 60 },
+  "CAT B": { roi: 14.0, tenureMonths: 60 },
+  "CAT C": { roi: 16.0, tenureMonths: 72 },
+  "CAT D": { roi: 18.0, tenureMonths: 72 },
+  "NA":    { roi: 0,    tenureMonths: 0  },
+};
+
+type ApprovedForLogin = "yes" | "no" | null;
+
 interface LenderOption {
   id: string;
   name: string;
@@ -97,22 +108,28 @@ interface LenderOption {
   overrideEMI?: number;
   category: LenderCategory;
   policyMatch: boolean;
+  approvedForLogin: ApprovedForLogin;
+  remark: string;
+  rejectionReason: string;
 }
 
 const INITIAL_LENDERS: LenderOption[] = [
   // Matching the file (4)
-  { id: "1", name: "AFL",             tenureMonths: 60, roi: 12.5, topUpAvailable: 200000, category: "CAT A", policyMatch: true },
-  { id: "3", name: "IDFC First",      tenureMonths: 60, roi: 13.0, topUpAvailable: 250000, category: "CAT A", policyMatch: true },
-  { id: "4", name: "Bajaj Finserv",   tenureMonths: 72, roi: 14.5, topUpAvailable: 400000, category: "CAT B", policyMatch: true },
-  { id: "6", name: "HDFC Bank",       tenureMonths: 60, roi: 13.5, topUpAvailable: 300000, category: "CAT A", policyMatch: true },
-  // Not matching (6) — mix of NA category & policy-not-match
-  { id: "2", name: "TATA Capital",    tenureMonths: 60, roi: 14.0, topUpAvailable: 0,      category: "NA",    policyMatch: false },
-  { id: "5", name: "Piramal Finance", tenureMonths: 60, roi: 15.5, topUpAvailable: 0,      category: "CAT C", policyMatch: false },
-  { id: "7", name: "ICICI Bank",      tenureMonths: 60, roi: 13.0, topUpAvailable: 0,      category: "NA",    policyMatch: false },
-  { id: "8", name: "Kotak Mahindra",  tenureMonths: 60, roi: 14.0, topUpAvailable: 150000, category: "CAT D", policyMatch: false },
-  { id: "9", name: "Axis Finance",    tenureMonths: 60, roi: 13.5, topUpAvailable: 0,      category: "NA",    policyMatch: false },
-  { id: "10", name: "Shriram Finance",tenureMonths: 72, roi: 15.0, topUpAvailable: 100000, category: "CAT C", policyMatch: false },
+  { id: "1", name: "AFL",             tenureMonths: 60, roi: 12.5, topUpAvailable: 200000, category: "CAT A", policyMatch: true,  approvedForLogin: null, remark: "", rejectionReason: "" },
+  { id: "3", name: "IDFC First",      tenureMonths: 60, roi: 13.0, topUpAvailable: 250000, category: "CAT A", policyMatch: true,  approvedForLogin: null, remark: "", rejectionReason: "" },
+  { id: "4", name: "Bajaj Finserv",   tenureMonths: 72, roi: 14.5, topUpAvailable: 400000, category: "CAT B", policyMatch: true,  approvedForLogin: null, remark: "", rejectionReason: "" },
+  { id: "6", name: "HDFC Bank",       tenureMonths: 60, roi: 13.5, topUpAvailable: 300000, category: "CAT A", policyMatch: true,  approvedForLogin: null, remark: "", rejectionReason: "" },
+  // Not matching (6)
+  { id: "2", name: "TATA Capital",    tenureMonths: 60, roi: 14.0, topUpAvailable: 0,      category: "NA",    policyMatch: false, approvedForLogin: null, remark: "", rejectionReason: "" },
+  { id: "5", name: "Piramal Finance", tenureMonths: 60, roi: 15.5, topUpAvailable: 0,      category: "CAT C", policyMatch: false, approvedForLogin: null, remark: "", rejectionReason: "" },
+  { id: "7", name: "PFL",             tenureMonths: 60, roi: 13.0, topUpAvailable: 0,      category: "NA",    policyMatch: false, approvedForLogin: null, remark: "", rejectionReason: "" },
+  { id: "8", name: "ABCL",            tenureMonths: 60, roi: 14.0, topUpAvailable: 150000, category: "CAT D", policyMatch: false, approvedForLogin: null, remark: "", rejectionReason: "" },
+  { id: "9", name: "Axis Finance",    tenureMonths: 60, roi: 13.5, topUpAvailable: 0,      category: "NA",    policyMatch: false, approvedForLogin: null, remark: "", rejectionReason: "" },
+  { id: "10", name: "Shriram Finance",tenureMonths: 72, roi: 15.0, topUpAvailable: 100000, category: "CAT C", policyMatch: false, approvedForLogin: null, remark: "", rejectionReason: "" },
 ];
+
+/* Lenders that ALWAYS require a remark, regardless of approval status */
+const REMARK_MANDATORY_LENDERS = new Set(["AFL", "ABCL", "PFL"]);
 
 /* ── Lender suggestions ── */
 const LENDER_SUGGESTIONS = [
@@ -141,6 +158,7 @@ interface DashboardTabProps {
   setExcluded: Dispatch<SetStateAction<Creditor[]>>;
   stcIds:      Set<string>;
   onToggleStc: (id: string) => void;
+  onFileReadyChange?: (ready: boolean) => void;
 }
 
 /* ── Editable number cell ── */
@@ -166,6 +184,7 @@ const DashboardTab = ({
   included, setIncluded,
   excluded, setExcluded,
   stcIds, onToggleStc,
+  onFileReadyChange,
 }: DashboardTabProps) => {
 
   /* ── Scroll ref ── */
@@ -180,8 +199,30 @@ const DashboardTab = ({
 
   /* ── Lender data ── */
   const [lenderData, setLenderData] = useState<LenderOption[]>(INITIAL_LENDERS);
-  const updateLender = (id: string, field: keyof LenderOption, val: number | string) =>
-    setLenderData((p) => p.map((l) => (l.id === id ? { ...l, [field]: val } : l)));
+  /* Whether the user has run the "Lender Check" — controls sort order & UI cues */
+  const [lenderMatchRun, setLenderMatchRun] = useState(false);
+
+  const updateLender = (id: string, field: keyof LenderOption, val: number | string | boolean | null) =>
+    setLenderData((prev) =>
+      prev.map((l) => {
+        if (l.id !== id) return l;
+        const next: LenderOption = { ...l, [field]: val } as LenderOption;
+        // Category change → recompute commercials & policy match
+        if (field === "category") {
+          const cat = val as LenderCategory;
+          if (cat === "NA") {
+            next.policyMatch = false;
+          } else {
+            const c = CATEGORY_COMMERCIALS[cat];
+            next.roi = c.roi;
+            next.tenureMonths = c.tenureMonths;
+            // Re-evaluate policy match: cat A/B always match, C/D match only if has top-up or low ROI
+            next.policyMatch = cat === "CAT A" || cat === "CAT B";
+          }
+        }
+        return next;
+      })
+    );
 
   /* ── Qualification form (pre-filled) ── */
   const [qualForm, setQualForm] = useState({
@@ -209,6 +250,9 @@ const DashboardTab = ({
       topUpAvailable: newLenderDraft.topUpAvailable,
       category: "CAT B",
       policyMatch: true,
+      approvedForLogin: null,
+      remark: "",
+      rejectionReason: "",
     };
     setLenderData((p) => [...p, nl]);
     setNewLenderDraft({ name: "", tenureMonths: 60, roi: 12.0, topUpAvailable: 0 });
@@ -303,6 +347,30 @@ const DashboardTab = ({
     [lenderData, inclClosureTotal, exclEMITotal, existingTotalEMI, netSalary]
   );
 
+  /* ── Sorted lender rows ── */
+  const PRIORITY_LENDERS = ["AFL", "PFL", "ABCL"];
+  const sortedLenderRows = useMemo(() => {
+    const rows = [...lenderRows];
+    if (!lenderMatchRun) {
+      // Pre-match: priority lenders first, rest in original order
+      return rows.sort((a, b) => {
+        const ai = PRIORITY_LENDERS.indexOf(a.name);
+        const bi = PRIORITY_LENDERS.indexOf(b.name);
+        if (ai !== -1 && bi === -1) return -1;
+        if (bi !== -1 && ai === -1) return 1;
+        if (ai !== -1 && bi !== -1) return ai - bi;
+        return 0;
+      });
+    }
+    // Post-match: matched → category-NA → unmatched
+    const bucket = (l: typeof rows[number]) => {
+      if (l.policyMatch && l.category !== "NA") return 0;
+      if (l.category === "NA") return 1;
+      return 2;
+    };
+    return rows.sort((a, b) => bucket(a) - bucket(b));
+  }, [lenderRows, lenderMatchRun]);
+
   /* ── Best lender (highest reduction) ── */
   const bestLenderId = useMemo(() => {
     if (lenderRows.length === 0) return null;
@@ -317,8 +385,17 @@ const DashboardTab = ({
     }
   }, [bestLenderId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  /* ── Loan Details CTA ── */
+  /* ── Notify parent when file is ready for login (any matched lender approved=yes with remark) ── */
+  useEffect(() => {
+    const ready = lenderData.some(
+      (l) => l.policyMatch && l.approvedForLogin === "yes" && l.remark.trim().length > 0
+    );
+    onFileReadyChange?.(ready);
+  }, [lenderData, onFileReadyChange]);
+
+  /* ── Lender Check CTA ── */
   const handleLoanDetails = () => {
+    setLenderMatchRun(true);
     if (!bestLenderId) return;
     setSelectedLenderId(bestLenderId);
     setAutoSelected(true);
@@ -486,6 +563,9 @@ const DashboardTab = ({
                 <Pencil className="h-3.5 w-3.5" /> Edit
               </Button>
             )}
+            <Button size="sm" onClick={handleLoanDetails} className="gap-1.5 text-xs h-8">
+              Lender Check <ArrowRight className="h-3.5 w-3.5" />
+            </Button>
           </div>
         </div>
 
@@ -732,12 +812,6 @@ const DashboardTab = ({
 
       {/* ═══════════════ SECTION 2B · SUMMARY ═══════════════ */}
       <div className="bg-card rounded-lg border p-5 space-y-4">
-        <div className="flex items-center justify-center">
-          <Button onClick={handleLoanDetails} className="gap-2 px-10 h-10 text-sm">
-            Lender Check <ArrowRight className="h-4 w-4" />
-          </Button>
-        </div>
-
         <h3 className="text-sm font-semibold text-foreground">Summary</h3>
 
         <div className="grid grid-cols-2 gap-4">
@@ -871,12 +945,15 @@ const DashboardTab = ({
 
         {/* Header */}
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-foreground">Preferred Lenders</h3>
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-semibold text-foreground">Preferred Lenders</h3>
+            {lenderMatchRun && (
+              <Badge variant="outline" className="text-[10px] h-5 border-emerald-300 text-emerald-700 bg-emerald-50">
+                Lender Match Run
+              </Badge>
+            )}
+          </div>
           <div className="flex items-center gap-3">
-            <Button variant="outline" size="sm" className="gap-1.5 text-xs h-8 border-primary/40 text-primary hover:bg-primary/5"
-              onClick={() => setAddingLender(true)} disabled={addingLender}>
-              <Plus className="h-3.5 w-3.5" /> Add Lender
-            </Button>
             {isLenderEditing ? (
               <Button size="sm" className="gap-1.5 text-xs h-8" onClick={() => setIsLenderEditing(false)}>
                 <Check className="h-3.5 w-3.5" /> Save
@@ -904,10 +981,12 @@ const DashboardTab = ({
                 <TableHead className="text-xs font-semibold bg-muted/30 text-right">Total Repayment</TableHead>
                 <TableHead className="text-xs font-semibold bg-muted/30 text-center">Top-up</TableHead>
                 <TableHead className="text-xs font-semibold bg-muted/30 text-center">Add Top-up</TableHead>
+                <TableHead className="text-xs font-semibold bg-muted/30">Approved for Login</TableHead>
+                <TableHead className="text-xs font-semibold bg-muted/30 min-w-[180px]">Remarks</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {lenderRows.map((l) => {
+              {sortedLenderRows.map((l) => {
                 const isSelected  = selectedLenderId === l.id;
                 const isAutoSel   = isSelected && autoSelected;
                 const hasTopUp    = l.topUpAvailable > 0;
@@ -953,7 +1032,7 @@ const DashboardTab = ({
                           </div>
                           {!l.policyMatch && (
                             <span className="inline-flex items-center gap-1 text-[10px] font-medium text-red-600 leading-tight">
-                              <AlertCircle className="h-3 w-3 shrink-0" /> Lender policy not match
+                              <AlertCircle className="h-3 w-3 shrink-0" /> Policy Mismatch
                             </span>
                           )}
                         </div>
@@ -1057,6 +1136,74 @@ const DashboardTab = ({
                           {!hasTopUp ? "Top-up not available" : canTopUp ? "Toggle top-up" : "Select this lender first"}
                         </TooltipContent>
                       </Tooltip>
+                    </TableCell>
+
+                    {/* Approved for Login */}
+                    <TableCell className="py-3" onClick={(e) => e.stopPropagation()}>
+                      {l.policyMatch || REMARK_MANDATORY_LENDERS.has(l.name) ? (
+                        <Select
+                          value={l.approvedForLogin ?? ""}
+                          onValueChange={(v) => updateLender(l.id, "approvedForLogin", v as ApprovedForLogin)}
+                        >
+                          <SelectTrigger
+                            className={`h-7 w-[88px] text-[11px] font-semibold ${
+                              l.approvedForLogin === "yes"
+                                ? "bg-emerald-50 border-emerald-200 text-emerald-700"
+                                : l.approvedForLogin === "no"
+                                  ? "bg-red-50 border-red-200 text-red-700"
+                                  : "bg-muted/40 border-transparent"
+                            }`}
+                          >
+                            <SelectValue placeholder="—" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="yes" className="text-xs">Yes</SelectItem>
+                            <SelectItem value="no" className="text-xs">No</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <span className="text-[11px] text-muted-foreground italic">N/A</span>
+                      )}
+                    </TableCell>
+
+                    {/* Remarks */}
+                    <TableCell className="py-3" onClick={(e) => e.stopPropagation()}>
+                      {(() => {
+                        const isMandatoryLender = REMARK_MANDATORY_LENDERS.has(l.name);
+                        const remarkRequired =
+                          (l.approvedForLogin === "yes") || isMandatoryLender;
+                        if (l.approvedForLogin === "no") {
+                          // Free-text input that becomes a custom rejection-reason chip
+                          return (
+                            <div className="space-y-1">
+                              <Input
+                                value={l.rejectionReason}
+                                onChange={(e) => updateLender(l.id, "rejectionReason", e.target.value)}
+                                placeholder="Type rejection reason..."
+                                className="h-7 text-xs border-red-200 focus-visible:ring-red-300"
+                              />
+                              {l.rejectionReason && (
+                                <Badge variant="outline" className="text-[10px] h-4 px-1.5 border-red-300 text-red-700 bg-red-50">
+                                  Reason: {l.rejectionReason}
+                                </Badge>
+                              )}
+                            </div>
+                          );
+                        }
+                        return (
+                          <div className="space-y-1">
+                            <Input
+                              value={l.remark}
+                              onChange={(e) => updateLender(l.id, "remark", e.target.value)}
+                              placeholder={remarkRequired ? "Remark (required)" : "Optional remark"}
+                              className={`h-7 text-xs ${remarkRequired && !l.remark.trim() ? "border-red-300 focus-visible:ring-red-300" : ""}`}
+                            />
+                            {remarkRequired && !l.remark.trim() && (
+                              <span className="text-[9px] text-red-600 font-medium">Required{isMandatoryLender ? ` for ${l.name}` : ""}</span>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </TableCell>
                   </TableRow>
                 );

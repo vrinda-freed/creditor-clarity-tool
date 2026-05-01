@@ -24,6 +24,7 @@ import {
   ShieldCheck,
   X,
   Check,
+  LogIn,
 } from "lucide-react";
 import { ScrubTask } from "@/types/scrub";
 
@@ -40,9 +41,11 @@ interface RightPanelProps {
   onRequestScrub: (primaryLender: string, secondaryLender?: string) => void;
   onScrubFileClick: (task: ScrubTask) => void;
   // Sales Rep Actions
-  onRepActionSubmit: (action: "rejected" | "scrub", reason?: string) => void;
+  onRepActionSubmit: (action: "rejected" | "scrub" | "request-login", reason?: string) => void;
   // Lender names for scrub selection
   availableLenders?: string[];
+  // Whether the file is ready for direct submission (enables Request Login)
+  fileReadyForLogin?: boolean;
 }
 
 interface ActionRowProps {
@@ -89,12 +92,13 @@ const RightPanel = ({
   onScrubFileClick,
   onRepActionSubmit,
   availableLenders,
+  fileReadyForLogin = false,
 }: RightPanelProps) => {
   const [noteText, setNoteText] = useState("");
   const [requestInfoOpen, setRequestInfoOpen] = useState(false);
 
   // Sales Rep Actions state
-  const [repAction, setRepAction] = useState<null | "rejected" | "scrub">(null);
+  const [repAction, setRepAction] = useState<null | "rejected" | "scrub" | "request-login">(null);
   const [rejectReason, setRejectReason] = useState("");
   const [repComment, setRepComment] = useState("");
   const [repSubmitted, setRepSubmitted] = useState(false);
@@ -102,7 +106,8 @@ const RightPanel = ({
   // Lender selection for scrub
   const lenderList = availableLenders && availableLenders.length > 0 ? availableLenders : SCRUB_LENDER_LIST;
   const [scrubPrimaryLender, setScrubPrimaryLender] = useState("");
-  const [scrubSecondaryLender, setScrubSecondaryLender] = useState("");
+  const [scrubSecondaryLenders, setScrubSecondaryLenders] = useState<string[]>([]);
+  const [secondaryOpen, setSecondaryOpen] = useState(false);
 
   const notes = [
     "Call Nature : Manual-Outbound| Call start time: 2025-03-10 10:30",
@@ -275,7 +280,7 @@ const RightPanel = ({
       </Card>
 
       {/* Sales Rep Actions */}
-      <Card className={`shadow-none ${repSubmitted ? (repAction === "rejected" ? "border-red-200" : "border-amber-200") : ""}`}>
+      <Card className={`shadow-none ${repSubmitted ? (repAction === "rejected" ? "border-red-200" : repAction === "scrub" ? "border-amber-200" : "border-emerald-200") : ""}`}>
         <CardContent className="p-3 space-y-3">
           {/* Header */}
           <div className="flex items-center justify-between">
@@ -285,26 +290,30 @@ const RightPanel = ({
               </div>
               <span className="text-sm font-medium text-foreground">Sales Rep Actions</span>
               {repSubmitted && (
-                <Badge variant="outline" className={`text-[10px] h-4 px-1.5 border ${repAction === "rejected" ? "border-red-300 text-red-700 bg-red-50" : "border-amber-300 text-amber-700 bg-amber-50"}`}>
-                  {repAction === "rejected" ? "Rejected" : "Scrub Requested"}
+                <Badge variant="outline" className={`text-[10px] h-4 px-1.5 border ${repAction === "rejected" ? "border-red-300 text-red-700 bg-red-50" : repAction === "scrub" ? "border-amber-300 text-amber-700 bg-amber-50" : "border-emerald-300 text-emerald-700 bg-emerald-50"}`}>
+                  {repAction === "rejected" ? "Rejected" : repAction === "scrub" ? "Scrub Requested" : "Login Requested"}
                 </Badge>
               )}
             </div>
             {repSubmitted && (
-              <button onClick={() => { setRepSubmitted(false); setRepAction(null); setRejectReason(""); setRepComment(""); }}
+              <button onClick={() => { setRepSubmitted(false); setRepAction(null); setRejectReason(""); setRepComment(""); setScrubSecondaryLenders([]); }}
                 className="text-[10px] text-muted-foreground hover:text-foreground underline">Reset</button>
             )}
           </div>
 
           {repSubmitted ? (
-            <div className={`rounded-lg px-3 py-2.5 text-xs ${repAction === "rejected" ? "bg-red-50 border border-red-200 text-red-800" : "bg-amber-50 border border-amber-200 text-amber-800"}`}>
+            <div className={`rounded-lg px-3 py-2.5 text-xs ${repAction === "rejected" ? "bg-red-50 border border-red-200 text-red-800" : repAction === "scrub" ? "bg-amber-50 border border-amber-200 text-amber-800" : "bg-emerald-50 border border-emerald-200 text-emerald-800"}`}>
               {repAction === "rejected"
                 ? `File rejected${rejectReason ? ` — ${rejectReason.replace(/-/g, " ")}` : ""}.`
-                : "Scrub requested successfully."}
+                : repAction === "scrub"
+                  ? "Scrub requested successfully."
+                  : "Login requested — file submitted."}
               {repAction === "scrub" && scrubPrimaryLender && (
                 <div className="mt-1.5 space-y-0.5">
                   <p className="font-medium">Primary: <span className="font-normal">{scrubPrimaryLender}</span></p>
-                  {scrubSecondaryLender && <p className="font-medium">Secondary: <span className="font-normal">{scrubSecondaryLender}</span></p>}
+                  {scrubSecondaryLenders.length > 0 && (
+                    <p className="font-medium">Secondary: <span className="font-normal">{scrubSecondaryLenders.join(", ")}</span></p>
+                  )}
                 </div>
               )}
               {repComment && <p className="mt-1 italic text-muted-foreground">"{repComment}"</p>}
@@ -312,7 +321,7 @@ const RightPanel = ({
           ) : (
             <div className="space-y-3">
               {/* Action toggle buttons */}
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
                 <button
                   onClick={() => setRepAction(repAction === "rejected" ? null : "rejected")}
                   className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md border font-medium transition-colors ${repAction === "rejected" ? "bg-red-50 border-red-300 text-red-700" : "border-border text-muted-foreground hover:bg-muted/60"}`}>
@@ -322,6 +331,19 @@ const RightPanel = ({
                   onClick={() => setRepAction(repAction === "scrub" ? null : "scrub")}
                   className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md border font-medium transition-colors ${repAction === "scrub" ? "bg-amber-50 border-amber-300 text-amber-700" : "border-border text-muted-foreground hover:bg-muted/60"}`}>
                   <ShieldCheck className="h-3 w-3" /> Request Scrub
+                </button>
+                <button
+                  disabled={!fileReadyForLogin}
+                  onClick={() => fileReadyForLogin && setRepAction(repAction === "request-login" ? null : "request-login")}
+                  title={fileReadyForLogin ? "Submit file for login" : "Available only when file is ready to submit"}
+                  className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md border font-medium transition-colors ${
+                    !fileReadyForLogin
+                      ? "border-border text-muted-foreground/40 bg-muted/30 cursor-not-allowed"
+                      : repAction === "request-login"
+                        ? "bg-emerald-50 border-emerald-300 text-emerald-700"
+                        : "border-border text-muted-foreground hover:bg-muted/60"
+                  }`}>
+                  <LogIn className="h-3 w-3" /> Request Login
                 </button>
               </div>
 
@@ -356,7 +378,7 @@ const RightPanel = ({
                     </p>
                     <Select value={scrubPrimaryLender} onValueChange={(v) => {
                       setScrubPrimaryLender(v);
-                      if (v === scrubSecondaryLender) setScrubSecondaryLender("");
+                      setScrubSecondaryLenders((prev) => prev.filter((x) => x !== v));
                     }}>
                       <SelectTrigger className="h-7 text-xs">
                         <SelectValue placeholder="Select primary lender" />
@@ -370,29 +392,72 @@ const RightPanel = ({
                   </div>
                   <div className="space-y-1">
                     <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
-                      Secondary Lender <span className="text-muted-foreground/50 normal-case">(optional)</span>
+                      Secondary Lenders <span className="text-muted-foreground/50 normal-case">(optional, multi-select)</span>
                     </p>
-                    <Select value={scrubSecondaryLender} onValueChange={setScrubSecondaryLender}>
-                      <SelectTrigger className="h-7 text-xs">
-                        <SelectValue placeholder="Select secondary lender" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {lenderList.filter(l => l !== scrubPrimaryLender).map((l) => (
-                          <SelectItem key={l} value={l}>{l}</SelectItem>
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onClick={() => setSecondaryOpen((p) => !p)}
+                        className="flex h-7 w-full items-center justify-between rounded-md border border-input bg-background px-3 text-xs"
+                      >
+                        <span className="truncate text-left">
+                          {scrubSecondaryLenders.length === 0
+                            ? <span className="text-muted-foreground">Select secondary lenders</span>
+                            : scrubSecondaryLenders.join(", ")}
+                        </span>
+                        <ChevronDown className="h-3.5 w-3.5 opacity-50 shrink-0" />
+                      </button>
+                      {secondaryOpen && (
+                        <div className="absolute z-50 mt-1 w-full max-h-48 overflow-y-auto rounded-md border bg-popover shadow-md">
+                          {lenderList.filter((l) => l !== scrubPrimaryLender).map((l) => {
+                            const checked = scrubSecondaryLenders.includes(l);
+                            return (
+                              <button
+                                key={l}
+                                type="button"
+                                onClick={() =>
+                                  setScrubSecondaryLenders((prev) =>
+                                    prev.includes(l) ? prev.filter((x) => x !== l) : [...prev, l]
+                                  )
+                                }
+                                className="flex w-full items-center gap-2 px-2 py-1.5 text-xs hover:bg-muted/60 text-left"
+                              >
+                                <span className={`h-3.5 w-3.5 rounded border flex items-center justify-center ${checked ? "bg-primary border-primary text-primary-foreground" : "border-input"}`}>
+                                  {checked && <Check className="h-2.5 w-2.5" />}
+                                </span>
+                                {l}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                    {scrubSecondaryLenders.length > 0 && (
+                      <div className="flex flex-wrap gap-1 pt-1">
+                        {scrubSecondaryLenders.map((l) => (
+                          <Badge key={l} variant="outline" className="text-[10px] h-5 gap-1 pr-1">
+                            {l}
+                            <button onClick={() => setScrubSecondaryLenders((prev) => prev.filter((x) => x !== l))}>
+                              <X className="h-2.5 w-2.5" />
+                            </button>
+                          </Badge>
                         ))}
-                      </SelectContent>
-                    </Select>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
 
               {/* Comment */}
               <div className="space-y-1">
-                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Comment</p>
+                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+                  Comment
+                  {repAction === "request-login" && <span className="text-red-500"> *</span>}
+                </p>
                 <Textarea
                   value={repComment}
                   onChange={(e) => setRepComment(e.target.value)}
-                  placeholder="Add notes..."
+                  placeholder={repAction === "request-login" ? "Mandatory remark for login request..." : "Add notes..."}
                   className="min-h-[50px] text-xs resize-none bg-muted/50"
                   rows={2}
                 />
@@ -402,15 +467,20 @@ const RightPanel = ({
               <Button
                 size="sm"
                 className="w-full h-7 text-xs gap-1.5"
-                disabled={!repAction || (repAction === "rejected" && !rejectReason) || (repAction === "scrub" && !scrubPrimaryLender)}
+                disabled={
+                  !repAction ||
+                  (repAction === "rejected" && !rejectReason) ||
+                  (repAction === "scrub" && !scrubPrimaryLender) ||
+                  (repAction === "request-login" && !repComment.trim())
+                }
                 onClick={() => {
-                  if (repAction === "scrub") onRequestScrub(scrubPrimaryLender, scrubSecondaryLender || undefined);
+                  if (repAction === "scrub") onRequestScrub(scrubPrimaryLender, scrubSecondaryLenders.join(", ") || undefined);
                   onRepActionSubmit(repAction!, rejectReason || undefined);
                   setRepSubmitted(true);
                 }}
               >
                 <Check className="h-3 w-3" />
-                {repAction === "rejected" ? "Confirm Rejection" : repAction === "scrub" ? "Request Scrub" : "Submit"}
+                {repAction === "rejected" ? "Confirm Rejection" : repAction === "scrub" ? "Request Scrub" : repAction === "request-login" ? "Submit for Login" : "Submit"}
               </Button>
             </div>
           )}
