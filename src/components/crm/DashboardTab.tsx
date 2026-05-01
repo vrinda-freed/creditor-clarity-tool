@@ -347,6 +347,30 @@ const DashboardTab = ({
     [lenderData, inclClosureTotal, exclEMITotal, existingTotalEMI, netSalary]
   );
 
+  /* ── Sorted lender rows ── */
+  const PRIORITY_LENDERS = ["AFL", "PFL", "ABCL"];
+  const sortedLenderRows = useMemo(() => {
+    const rows = [...lenderRows];
+    if (!lenderMatchRun) {
+      // Pre-match: priority lenders first, rest in original order
+      return rows.sort((a, b) => {
+        const ai = PRIORITY_LENDERS.indexOf(a.name);
+        const bi = PRIORITY_LENDERS.indexOf(b.name);
+        if (ai !== -1 && bi === -1) return -1;
+        if (bi !== -1 && ai === -1) return 1;
+        if (ai !== -1 && bi !== -1) return ai - bi;
+        return 0;
+      });
+    }
+    // Post-match: matched → category-NA → unmatched
+    const bucket = (l: typeof rows[number]) => {
+      if (l.policyMatch && l.category !== "NA") return 0;
+      if (l.category === "NA") return 1;
+      return 2;
+    };
+    return rows.sort((a, b) => bucket(a) - bucket(b));
+  }, [lenderRows, lenderMatchRun]);
+
   /* ── Best lender (highest reduction) ── */
   const bestLenderId = useMemo(() => {
     if (lenderRows.length === 0) return null;
@@ -361,8 +385,17 @@ const DashboardTab = ({
     }
   }, [bestLenderId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  /* ── Loan Details CTA ── */
+  /* ── Notify parent when file is ready for login (any matched lender approved=yes with remark) ── */
+  useEffect(() => {
+    const ready = lenderData.some(
+      (l) => l.policyMatch && l.approvedForLogin === "yes" && l.remark.trim().length > 0
+    );
+    onFileReadyChange?.(ready);
+  }, [lenderData, onFileReadyChange]);
+
+  /* ── Lender Check CTA ── */
   const handleLoanDetails = () => {
+    setLenderMatchRun(true);
     if (!bestLenderId) return;
     setSelectedLenderId(bestLenderId);
     setAutoSelected(true);
