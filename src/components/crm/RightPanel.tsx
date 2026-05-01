@@ -332,21 +332,19 @@ const RightPanel = ({
                   className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md border font-medium transition-colors ${repAction === "scrub" ? "bg-amber-50 border-amber-300 text-amber-700" : "border-border text-muted-foreground hover:bg-muted/60"}`}>
                   <ShieldCheck className="h-3 w-3" /> Request Scrub
                 </button>
-                <Tooltip-disabled>
-                  <button
-                    disabled={!fileReadyForLogin}
-                    onClick={() => fileReadyForLogin && setRepAction(repAction === "request-login" ? null : "request-login")}
-                    title={fileReadyForLogin ? "Submit file for login" : "Available only when file is ready to submit"}
-                    className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md border font-medium transition-colors ${
-                      !fileReadyForLogin
-                        ? "border-border text-muted-foreground/40 bg-muted/30 cursor-not-allowed"
-                        : repAction === "request-login"
-                          ? "bg-emerald-50 border-emerald-300 text-emerald-700"
-                          : "border-border text-muted-foreground hover:bg-muted/60"
-                    }`}>
-                    <LogIn className="h-3 w-3" /> Request Login
-                  </button>
-                </Tooltip-disabled>
+                <button
+                  disabled={!fileReadyForLogin}
+                  onClick={() => fileReadyForLogin && setRepAction(repAction === "request-login" ? null : "request-login")}
+                  title={fileReadyForLogin ? "Submit file for login" : "Available only when file is ready to submit"}
+                  className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md border font-medium transition-colors ${
+                    !fileReadyForLogin
+                      ? "border-border text-muted-foreground/40 bg-muted/30 cursor-not-allowed"
+                      : repAction === "request-login"
+                        ? "bg-emerald-50 border-emerald-300 text-emerald-700"
+                        : "border-border text-muted-foreground hover:bg-muted/60"
+                  }`}>
+                  <LogIn className="h-3 w-3" /> Request Login
+                </button>
               </div>
 
               {/* Reject reason — shown when rejected */}
