@@ -88,6 +88,17 @@ const foirColor = (pct: number) =>
 type LenderCategory = "CAT A" | "CAT B" | "CAT C" | "CAT D" | "NA";
 const LENDER_CATEGORIES: LenderCategory[] = ["CAT A", "CAT B", "CAT C", "CAT D", "NA"];
 
+/* ── Category-driven commercials (ROI & default tenure) ── */
+const CATEGORY_COMMERCIALS: Record<LenderCategory, { roi: number; tenureMonths: number }> = {
+  "CAT A": { roi: 12.5, tenureMonths: 60 },
+  "CAT B": { roi: 14.0, tenureMonths: 60 },
+  "CAT C": { roi: 16.0, tenureMonths: 72 },
+  "CAT D": { roi: 18.0, tenureMonths: 72 },
+  "NA":    { roi: 0,    tenureMonths: 0  },
+};
+
+type ApprovedForLogin = "yes" | "no" | null;
+
 interface LenderOption {
   id: string;
   name: string;
@@ -97,22 +108,28 @@ interface LenderOption {
   overrideEMI?: number;
   category: LenderCategory;
   policyMatch: boolean;
+  approvedForLogin: ApprovedForLogin;
+  remark: string;
+  rejectionReason: string;
 }
 
 const INITIAL_LENDERS: LenderOption[] = [
   // Matching the file (4)
-  { id: "1", name: "AFL",             tenureMonths: 60, roi: 12.5, topUpAvailable: 200000, category: "CAT A", policyMatch: true },
-  { id: "3", name: "IDFC First",      tenureMonths: 60, roi: 13.0, topUpAvailable: 250000, category: "CAT A", policyMatch: true },
-  { id: "4", name: "Bajaj Finserv",   tenureMonths: 72, roi: 14.5, topUpAvailable: 400000, category: "CAT B", policyMatch: true },
-  { id: "6", name: "HDFC Bank",       tenureMonths: 60, roi: 13.5, topUpAvailable: 300000, category: "CAT A", policyMatch: true },
-  // Not matching (6) — mix of NA category & policy-not-match
-  { id: "2", name: "TATA Capital",    tenureMonths: 60, roi: 14.0, topUpAvailable: 0,      category: "NA",    policyMatch: false },
-  { id: "5", name: "Piramal Finance", tenureMonths: 60, roi: 15.5, topUpAvailable: 0,      category: "CAT C", policyMatch: false },
-  { id: "7", name: "ICICI Bank",      tenureMonths: 60, roi: 13.0, topUpAvailable: 0,      category: "NA",    policyMatch: false },
-  { id: "8", name: "Kotak Mahindra",  tenureMonths: 60, roi: 14.0, topUpAvailable: 150000, category: "CAT D", policyMatch: false },
-  { id: "9", name: "Axis Finance",    tenureMonths: 60, roi: 13.5, topUpAvailable: 0,      category: "NA",    policyMatch: false },
-  { id: "10", name: "Shriram Finance",tenureMonths: 72, roi: 15.0, topUpAvailable: 100000, category: "CAT C", policyMatch: false },
+  { id: "1", name: "AFL",             tenureMonths: 60, roi: 12.5, topUpAvailable: 200000, category: "CAT A", policyMatch: true,  approvedForLogin: null, remark: "", rejectionReason: "" },
+  { id: "3", name: "IDFC First",      tenureMonths: 60, roi: 13.0, topUpAvailable: 250000, category: "CAT A", policyMatch: true,  approvedForLogin: null, remark: "", rejectionReason: "" },
+  { id: "4", name: "Bajaj Finserv",   tenureMonths: 72, roi: 14.5, topUpAvailable: 400000, category: "CAT B", policyMatch: true,  approvedForLogin: null, remark: "", rejectionReason: "" },
+  { id: "6", name: "HDFC Bank",       tenureMonths: 60, roi: 13.5, topUpAvailable: 300000, category: "CAT A", policyMatch: true,  approvedForLogin: null, remark: "", rejectionReason: "" },
+  // Not matching (6)
+  { id: "2", name: "TATA Capital",    tenureMonths: 60, roi: 14.0, topUpAvailable: 0,      category: "NA",    policyMatch: false, approvedForLogin: null, remark: "", rejectionReason: "" },
+  { id: "5", name: "Piramal Finance", tenureMonths: 60, roi: 15.5, topUpAvailable: 0,      category: "CAT C", policyMatch: false, approvedForLogin: null, remark: "", rejectionReason: "" },
+  { id: "7", name: "PFL",             tenureMonths: 60, roi: 13.0, topUpAvailable: 0,      category: "NA",    policyMatch: false, approvedForLogin: null, remark: "", rejectionReason: "" },
+  { id: "8", name: "ABCL",            tenureMonths: 60, roi: 14.0, topUpAvailable: 150000, category: "CAT D", policyMatch: false, approvedForLogin: null, remark: "", rejectionReason: "" },
+  { id: "9", name: "Axis Finance",    tenureMonths: 60, roi: 13.5, topUpAvailable: 0,      category: "NA",    policyMatch: false, approvedForLogin: null, remark: "", rejectionReason: "" },
+  { id: "10", name: "Shriram Finance",tenureMonths: 72, roi: 15.0, topUpAvailable: 100000, category: "CAT C", policyMatch: false, approvedForLogin: null, remark: "", rejectionReason: "" },
 ];
+
+/* Lenders that ALWAYS require a remark, regardless of approval status */
+const REMARK_MANDATORY_LENDERS = new Set(["AFL", "ABCL", "PFL"]);
 
 /* ── Lender suggestions ── */
 const LENDER_SUGGESTIONS = [
