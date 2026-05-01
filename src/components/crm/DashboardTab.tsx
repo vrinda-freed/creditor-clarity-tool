@@ -945,12 +945,15 @@ const DashboardTab = ({
 
         {/* Header */}
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-foreground">Preferred Lenders</h3>
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-semibold text-foreground">Preferred Lenders</h3>
+            {lenderMatchRun && (
+              <Badge variant="outline" className="text-[10px] h-5 border-emerald-300 text-emerald-700 bg-emerald-50">
+                Lender Match Run
+              </Badge>
+            )}
+          </div>
           <div className="flex items-center gap-3">
-            <Button variant="outline" size="sm" className="gap-1.5 text-xs h-8 border-primary/40 text-primary hover:bg-primary/5"
-              onClick={() => setAddingLender(true)} disabled={addingLender}>
-              <Plus className="h-3.5 w-3.5" /> Add Lender
-            </Button>
             {isLenderEditing ? (
               <Button size="sm" className="gap-1.5 text-xs h-8" onClick={() => setIsLenderEditing(false)}>
                 <Check className="h-3.5 w-3.5" /> Save
